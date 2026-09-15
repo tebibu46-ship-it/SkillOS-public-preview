@@ -761,7 +761,9 @@ async function synchronizeAuth(session: Session | null) {
 }
 function routeFromUrl(): View {
   const requested = new URLSearchParams(location.search).get('view');
-  return requested === 'Today' || (requested && requested in views) ? requested as View : 'Today';
+  const aliases: Record<string, View> = { Atlas: 'Skills', History: 'Learning history' };
+  const resolved = requested ? aliases[requested] || requested : null;
+  return resolved === 'Today' || (resolved && resolved in views) ? resolved as View : 'Today';
 }
 function renderRows(rows: Record<string, unknown>[]) {
   for (const [rowIndex, row] of rows.entries()) {
@@ -1198,8 +1200,8 @@ el('authRetry').onclick = () => location.reload();
 initializeEditorialMotion();
 if (publicPreview) {
   void navigate(routeFromUrl());
-  document.querySelectorAll<HTMLButtonElement>('button:not([data-view])').forEach(button => { button.disabled = true; button.title = 'This is a read-only SkillOS Preview.'; });
-  document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea').forEach(control => { control.disabled = true; });
+  document.querySelectorAll<HTMLButtonElement>('button:not([data-view]):not([data-preview-allow])').forEach(button => { button.disabled = true; button.title = 'This is a read-only SkillOS Preview.'; });
+  document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input:not([data-preview-allow]), select:not([data-preview-allow]), textarea:not([data-preview-allow])').forEach(control => { control.disabled = true; });
   document.querySelectorAll<HTMLFormElement>('form').forEach(form => form.addEventListener('submit', event => { event.preventDefault(); message('This is a read-only SkillOS Preview.'); }, true));
 } else if (!auth) {
   clearPrivateState();
