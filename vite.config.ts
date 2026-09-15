@@ -33,7 +33,14 @@ export default defineConfig(({ mode, command }) => {
   const env = localE2e ? { VITE_SKILLOS_LOCAL_E2E: 'true' } : loadedEnv;
   const configuredPreview = validatePreviewEnvironment({ ...loadedEnv, ...process.env });
   const vercelPreview = (process.env.VERCEL === '1' && process.env.VERCEL_ENV === 'preview') || loadedEnv.VITE_VERCEL_ENV === 'preview';
-  const publicPreview = configuredPreview || vercelPreview;
+  // The public-preview repository is intentionally a standalone, read-only
+  // deployment. Vercel may build its default branch as Production and omit the
+  // explicit VITE_SKILLOS_PUBLIC_PREVIEW setting, so identify this repository
+  // at build time and inject the same flag used by local preview builds.
+  const publicPreviewRepository = process.env.VERCEL === '1'
+    && process.env.VERCEL_GIT_REPO_OWNER?.toLowerCase() === 'tebibu46-ship-it'
+    && process.env.VERCEL_GIT_REPO_SLUG?.toLowerCase() === 'skillos-public-preview';
+  const publicPreview = configuredPreview || vercelPreview || publicPreviewRepository;
   if (publicPreview && localE2e) throw new Error('Public preview cannot be combined with local E2E mode.');
   for (const name of Object.keys(env)) {
     const approved = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY', 'VITE_SKILLOS_LOCAL_E2E', 'VITE_SKILLOS_PUBLIC_PREVIEW'].includes(name);
@@ -47,7 +54,9 @@ export default defineConfig(({ mode, command }) => {
   return {
   build: { sourcemap: false },
   envPrefix: publicPreview ? ['VITE_SKILLOS_'] : 'VITE_',
-  define: vercelPreview && !configuredPreview ? { 'import.meta.env.VITE_SKILLOS_PUBLIC_PREVIEW': JSON.stringify('true') } : undefined,
+  define: (vercelPreview || publicPreviewRepository) && !configuredPreview
+    ? { 'import.meta.env.VITE_SKILLOS_PUBLIC_PREVIEW': JSON.stringify('true') }
+    : undefined,
   server: {
     host: '127.0.0.1', port: 5174, strictPort: true,
     proxy: localE2e ? { '/__skillos_e2e': { target: 'http://127.0.0.1:54331', changeOrigin: false } } : undefined,
