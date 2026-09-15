@@ -37,9 +37,8 @@ export default defineConfig(({ mode, command }) => {
   if (publicPreview && localE2e) throw new Error('Public preview cannot be combined with local E2E mode.');
   for (const name of Object.keys(env)) {
     const approved = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY', 'VITE_SKILLOS_LOCAL_E2E', 'VITE_SKILLOS_PUBLIC_PREVIEW'].includes(name);
-    const vercelMetadata = publicPreview
-      ? VERCEL_SYSTEM_PUBLIC_ENV.has(name) || name.startsWith('VITE_VERCEL_')
-      : VERCEL_SYSTEM_PUBLIC_ENV.has(name);
+    // Vercel owns this reserved framework-metadata namespace; arbitrary VITE_* names remain rejected.
+    const vercelMetadata = VERCEL_SYSTEM_PUBLIC_ENV.has(name) || name.startsWith('VITE_VERCEL_');
     if (!approved && !vercelMetadata) {
       throw new Error('Unexpected public environment variable. Only approved SkillOS configuration is allowed.');
     }
