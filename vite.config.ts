@@ -26,11 +26,15 @@ export default defineConfig(({ mode, command }) => {
   const localE2e = process.env.VITE_SKILLOS_LOCAL_E2E === 'true';
   if (localE2e && command === 'build') throw new Error('Local E2E is development-only and cannot be built for deployment.');
   const env = localE2e ? { VITE_SKILLOS_LOCAL_E2E: 'true' } : loadedEnv;
-  const publicPreview = validatePreviewEnvironment({ ...loadedEnv, ...process.env });
+  const configuredPreview = validatePreviewEnvironment({ ...loadedEnv, ...process.env });
+  const vercelPreview = (process.env.VERCEL === '1' && process.env.VERCEL_ENV === 'preview') || loadedEnv.VITE_VERCEL_ENV === 'preview';
+  const publicPreview = configuredPreview || vercelPreview;
   if (publicPreview && localE2e) throw new Error('Public preview cannot be combined with local E2E mode.');
   for (const name of Object.keys(env)) {
     const approved = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY', 'VITE_SKILLOS_LOCAL_E2E', 'VITE_SKILLOS_PUBLIC_PREVIEW'].includes(name);
-    const vercelMetadata = publicPreview && VERCEL_SYSTEM_PUBLIC_ENV.has(name);
+    const vercelMetadata = publicPreview
+      ? VERCEL_SYSTEM_PUBLIC_ENV.has(name) || name.startsWith('VITE_VERCEL_')
+      : VERCEL_SYSTEM_PUBLIC_ENV.has(name);
     if (!approved && !vercelMetadata) {
       throw new Error('Unexpected public environment variable. Only approved SkillOS configuration is allowed.');
     }
@@ -39,6 +43,7 @@ export default defineConfig(({ mode, command }) => {
   return {
   build: { sourcemap: false },
   envPrefix: publicPreview ? ['VITE_SKILLOS_'] : 'VITE_',
+  define: vercelPreview && !configuredPreview ? { 'import.meta.env.VITE_SKILLOS_PUBLIC_PREVIEW': JSON.stringify('true') } : undefined,
   server: {
     host: '127.0.0.1', port: 5174, strictPort: true,
     proxy: localE2e ? { '/__skillos_e2e': { target: 'http://127.0.0.1:54331', changeOrigin: false } } : undefined,
