@@ -1,0 +1,28 @@
+{
+  "name": "skillos",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5174 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:database": "tsx --test tests/database.test.ts",
+    "check:security": "node scripts/check-security.mjs",
+    "catalog:seed": "tsx scripts/generate-catalog-seed.ts",
+    "local:e2e:api": "tsx scripts/local-e2e-api.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.115.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@types/node": "26.4.1",
+    "supabase": "2.116.0",
+    "tsx": "4.23.13",
+    "typescript": "7.0.2",
+    "vite": "8.2.2"
+  }
+}
